@@ -1,6 +1,12 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 provider "aws" {
-  region = "us-east-1"
+  region = var.region
 }
+
+# Filter out local zones, which are not currently supported 
+# with managed node groups
 data "aws_availability_zones" "available" {
   filter {
     name   = "opt-in-status"
@@ -9,14 +15,19 @@ data "aws_availability_zones" "available" {
 }
 
 locals {
-  cluster_name = "demo"
+  cluster_name = "education-eks-${random_string.suffix.result}"
+}
+
+resource "random_string" "suffix" {
+  length  = 8
+  special = false
 }
 
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "5.0.0"
 
-  name = "eks-project-vpc"
+  name = "education-vpc"
 
   cidr = "10.0.0.0/16"
   azs  = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -32,6 +43,7 @@ module "vpc" {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
     "kubernetes.io/role/elb"                      = 1
   }
+
   private_subnet_tags = {
     "kubernetes.io/cluster/${local.cluster_name}" = "shared"
     "kubernetes.io/role/internal-elb"             = 1
@@ -64,7 +76,8 @@ module "eks" {
       max_size     = 3
       desired_size = 2
     }
-        two = {
+
+    two = {
       name = "node-group-2"
 
       instance_types = ["t3.small"]
@@ -76,6 +89,8 @@ module "eks" {
   }
 }
 
+
+# https://aws.amazon.com/blogs/containers/amazon-ebs-csi-driver-is-now-generally-available-in-amazon-eks-add-ons/ 
 data "aws_iam_policy" "ebs_csi_policy" {
   arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
 }
@@ -90,6 +105,7 @@ module "irsa-ebs-csi" {
   role_policy_arns              = [data.aws_iam_policy.ebs_csi_policy.arn]
   oidc_fully_qualified_subjects = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
 }
+
 resource "aws_eks_addon" "ebs-csi" {
   cluster_name             = module.eks.cluster_name
   addon_name               = "aws-ebs-csi-driver"
@@ -99,11 +115,4 @@ resource "aws_eks_addon" "ebs-csi" {
     "eks_addon" = "ebs-csi"
     "terraform" = "true"
   }
-}
-
-resource "aws_eks_addon" "cni" {
-  cluster_name      = module.eks.cluster_name
-  addon_name        = "vpc-cni"
-  addon_version     = "v1.16.0-eksbuild.1"
-  resolve_conflicts = "OVERWRITE"
 }
