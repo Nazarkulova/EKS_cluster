@@ -22,8 +22,27 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
-     # - name: Terraform Apply
-     #   run: terraform apply -auto-approve
-
       - name: Terraform Apply
         run: terraform apply -auto-approve
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+         aws-region: us-east-2
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-2 --name education-eks-NJoMc7bJ
+
+      - name: Install Helm
+        run: |
+         curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+         chmod +x get_helm.sh
+         ./get_helm.sh
+
+      - name: Deploy Helm Chart
+        run: |
+          helm repo add harbor https://helm.goharbor.io
+          helm uninstall my-harbor
+          helm install my-harbor harbor/harbor --version 1.14.0 -n harbor
