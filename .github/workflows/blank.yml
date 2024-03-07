@@ -23,7 +23,7 @@ jobs:
         run: terraform init
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform destroy -auto-approve
         
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -44,5 +44,5 @@ jobs:
       - name: Deploy Helm Chart
         run: |
           helm repo add harbor https://helm.goharbor.io
-          helm uninstall my-harbor
+    
           helm install my-harbor harbor/harbor --version 1.14.0
