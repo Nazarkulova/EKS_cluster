@@ -45,4 +45,4 @@ jobs:
         run: |
           helm repo add harbor https://helm.goharbor.io
           helm uninstall my-harbor
-          helm install my-harbor harbor/harbor --version 1.14.0 -n harbor
+          helm install my-harbor harbor/harbor --version 1.14.0
