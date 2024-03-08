@@ -35,7 +35,7 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region us-east-2 --name education-eks-NJoMc7bJ
 
-      - name: Install Helm
+      - name: Update Helm
         run: |
          curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
          chmod +x get_helm.sh
