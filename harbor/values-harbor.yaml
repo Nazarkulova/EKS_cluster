@@ -1,6 +1,0 @@
-expose:
-  type: loadBalancer
-  ports:
-    httpPort: 80
-  tls:
-    enabled: false
